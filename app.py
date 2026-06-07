@@ -1,30 +1,21 @@
 from flask import Flask, render_template, request, redirect, session, send_file
-from flask_mysqldb import MySQL
-
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import pagesizes
 from reportlab.lib.units import inch
-
+import sqlite3
 from datetime import datetime
 import os
 
-
 app = Flask(__name__)
 app.secret_key = "medizone_secret_123"
-# app.config['MYSQL_HOST'] = 'localhost'
-# app.config['MYSQL_USER'] = 'root'
-# app.config['MYSQL_PASSWORD'] = 'Patil'
-# app.config['MYSQL_DB'] = 'medizone'
 
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')
-app.config['MYSQL_USER'] = os.getenv('MYSQL_USER')
-app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD')
-app.config['MYSQL_DB'] = os.getenv('MYSQL_DB')
-app.config['MYSQL_PORT'] = int(os.getenv('MYSQL_PORT', 3306))
 
-mysql = MySQL(app)
+def get_db():
+    conn = sqlite3.connect("medizone.db")
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 @app.route("/")
@@ -38,11 +29,16 @@ def register():
         email = request.form["email"]
         password = request.form["password"]
 
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users(name,email,password) VALUES(%s,%s,%s)",
-                    (name,email,password))
-        mysql.connection.commit()
-        cur.close()
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO users(name, email, password) VALUES (?, ?, ?)",
+            (name, email, password)
+        )
+
+        conn.commit()
+        conn.close()
 
         return "Registered Successfully!"
 
@@ -54,14 +50,20 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        cur = mysql.connection.cursor()
-        cur.execute("SELECT * FROM users WHERE email=%s AND password=%s", (email, password))
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute(
+            "SELECT * FROM users WHERE email=? AND password=?",
+            (email, password)
+        )
+
         user = cur.fetchone()
-        cur.close()
+        conn.close()
 
         if user:
-            session["user_id"] = user[0]
-            session["user_name"] = user[1]
+            session["user_id"] = user["id"]
+            session["user_name"] = user["name"]
             return redirect("/products")
         else:
             return "Invalid Email or Password"
@@ -85,12 +87,17 @@ def products():
     if "user_id" not in session:
         return redirect("/login")
 
-    cur = mysql.connection.cursor()
+    conn = get_db()
+    cur = conn.cursor()
+
     cur.execute("SELECT * FROM products")
     products = cur.fetchall()
-    cur.close()
+
+    conn.close()
 
     return render_template("products.html", products=products)
+
+
 
 @app.route("/add_to_cart/<int:product_id>")
 def add_to_cart(product_id):
@@ -99,23 +106,28 @@ def add_to_cart(product_id):
 
     user_id = session["user_id"]
 
-    cur = mysql.connection.cursor()
+    conn = get_db()
+    cur = conn.cursor()
 
-    # check if product already in cart
-    cur.execute("SELECT * FROM cart WHERE user_id=%s AND product_id=%s",
-                (user_id, product_id))
+    cur.execute(
+        "SELECT * FROM cart WHERE user_id=? AND product_id=?",
+        (user_id, product_id)
+    )
     existing = cur.fetchone()
 
     if existing:
-        cur.execute("UPDATE cart SET quantity = quantity + 1 WHERE user_id=%s AND product_id=%s",
-                    (user_id, product_id))
+        cur.execute(
+            "UPDATE cart SET quantity = quantity + 1 WHERE user_id=? AND product_id=?",
+            (user_id, product_id)
+        )
     else:
         cur.execute(
-            "INSERT INTO cart(user_id, product_id, quantity) VALUES(%s,%s,1)",
-            (user_id, product_id))
+            "INSERT INTO cart(user_id, product_id, quantity) VALUES(?, ?, 1)",
+            (user_id, product_id)
+        )
 
-    mysql.connection.commit()
-    cur.close()
+    conn.commit()
+    conn.close()
 
     return redirect("/products")
 
@@ -127,24 +139,26 @@ def buy_now(product_id):
 
     user_id = session["user_id"]
 
-    cur = mysql.connection.cursor()
+    conn = get_db()
+    cur = conn.cursor()
 
-    # get product
-    cur.execute("SELECT name, price FROM products WHERE id=%s", (product_id,))
+    cur.execute(
+        "SELECT name, price FROM products WHERE id=?",
+        (product_id,)
+    )
     product = cur.fetchone()
 
-    # direct order insert
-    total = product[1]
+    total = product["price"]
 
-    cur.execute("""
-        INSERT INTO orders(user_id, total_amount)
-        VALUES(%s,%s)
-    """, (user_id, total))
+    cur.execute(
+        "INSERT INTO orders(user_id, total_amount) VALUES(?, ?)",
+        (user_id, total)
+    )
 
-    mysql.connection.commit()
-    cur.close()
+    conn.commit()
+    conn.close()
 
-    return f"Order placed for {product[0]} ✔"
+    return f"Order placed for {product['name']} ✔"
 
 
 # cart view route.
@@ -154,22 +168,24 @@ def view_cart():
         return redirect("/login")
 
     user_id = session["user_id"]
-    cur = mysql.connection.cursor()
+
+    conn = get_db()
+    cur = conn.cursor()
 
     cur.execute("""
         SELECT products.id, products.name, products.price, cart.quantity
         FROM cart
         JOIN products ON cart.product_id = products.id
-        WHERE cart.user_id=%s
+        WHERE cart.user_id=?
     """, (user_id,))
 
     items = cur.fetchall()
 
     total = 0
     for item in items:
-        total += item[2] * item[3]
+        total += item["price"] * item["quantity"]
 
-    cur.close()
+    conn.close()
 
     return render_template("cart.html", items=items, total=total)
 
@@ -180,25 +196,30 @@ def remove_from_cart(product_id):
         return redirect("/login")
 
     user_id = session["user_id"]
-    cur = mysql.connection.cursor()
 
-    # check quantity
-    cur.execute("SELECT quantity FROM cart WHERE user_id=%s AND product_id=%s",
-                (user_id, product_id))
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT quantity FROM cart WHERE user_id=? AND product_id=?",
+        (user_id, product_id)
+    )
     item = cur.fetchone()
 
     if item:
-        if item[0] > 1:
-            # quantity 1 se zyada hai → decrease
-            cur.execute("UPDATE cart SET quantity = quantity - 1 WHERE user_id=%s AND product_id=%s",
-                        (user_id, product_id))
+        if item["quantity"] > 1:
+            cur.execute(
+                "UPDATE cart SET quantity = quantity - 1 WHERE user_id=? AND product_id=?",
+                (user_id, product_id)
+            )
         else:
-            # quantity 1 hai → pura delete
-            cur.execute("DELETE FROM cart WHERE user_id=%s AND product_id=%s",
-                        (user_id, product_id))
+            cur.execute(
+                "DELETE FROM cart WHERE user_id=? AND product_id=?",
+                (user_id, product_id)
+            )
 
-    mysql.connection.commit()
-    cur.close()
+    conn.commit()
+    conn.close()
 
     return redirect("/cart")
 
@@ -209,16 +230,18 @@ def increase(product_id):
         return redirect("/login")
 
     user_id = session["user_id"]
-    cur = mysql.connection.cursor()
+
+    conn = get_db()
+    cur = conn.cursor()
 
     cur.execute("""
         UPDATE cart
         SET quantity = quantity + 1
-        WHERE user_id=%s AND product_id=%s
+        WHERE user_id=? AND product_id=?
     """, (user_id, product_id))
 
-    mysql.connection.commit()
-    cur.close()
+    conn.commit()
+    conn.close()
 
     return redirect("/cart")
 
@@ -229,30 +252,32 @@ def decrease(product_id):
         return redirect("/login")
 
     user_id = session["user_id"]
-    cur = mysql.connection.cursor()
+
+    conn = get_db()
+    cur = conn.cursor()
 
     cur.execute("""
         SELECT quantity FROM cart
-        WHERE user_id=%s AND product_id=%s
+        WHERE user_id=? AND product_id=?
     """, (user_id, product_id))
 
     item = cur.fetchone()
 
     if item:
-        if item[0] > 1:
+        if item["quantity"] > 1:
             cur.execute("""
                 UPDATE cart
                 SET quantity = quantity - 1
-                WHERE user_id=%s AND product_id=%s
+                WHERE user_id=? AND product_id=?
             """, (user_id, product_id))
         else:
             cur.execute("""
                 DELETE FROM cart
-                WHERE user_id=%s AND product_id=%s
+                WHERE user_id=? AND product_id=?
             """, (user_id, product_id))
 
-    mysql.connection.commit()
-    cur.close()
+    conn.commit()
+    conn.close()
 
     return redirect("/cart")
 
@@ -263,29 +288,34 @@ def checkout():
         return redirect("/login")
 
     user_id = session["user_id"]
-    cur = mysql.connection.cursor()
+
+    conn = get_db()
+    cur = conn.cursor()
 
     # Get cart items
     cur.execute("""
         SELECT products.name, products.price, cart.quantity
         FROM cart
         JOIN products ON cart.product_id = products.id
-        WHERE cart.user_id=%s
+        WHERE cart.user_id=?
     """, (user_id,))
 
     items = cur.fetchall()
 
     if not items:
+        conn.close()
         return "Cart is empty"
 
+    # total calculate
     total = 0
     for item in items:
-        total += item[1] * item[2]
+        total += item["price"] * item["quantity"]
 
     # Insert into orders
-    cur.execute("INSERT INTO orders(user_id, total_amount) VALUES(%s,%s)",
-                (user_id, total))
-    mysql.connection.commit()
+    cur.execute(
+        "INSERT INTO orders(user_id, total_amount) VALUES(?,?)",
+        (user_id, total)
+    )
 
     order_id = cur.lastrowid
 
@@ -293,15 +323,14 @@ def checkout():
     for item in items:
         cur.execute("""
             INSERT INTO order_items(order_id, product_name, price, quantity)
-            VALUES(%s,%s,%s,%s)
-        """, (order_id, item[0], item[1], item[2]))
-
-    mysql.connection.commit()
+            VALUES(?,?,?,?)
+        """, (order_id, item["name"], item["price"], item["quantity"]))
 
     # Clear cart
-    cur.execute("DELETE FROM cart WHERE user_id=%s", (user_id,))
-    mysql.connection.commit()
-    cur.close()
+    cur.execute("DELETE FROM cart WHERE user_id=?", (user_id,))
+
+    conn.commit()
+    conn.close()
 
     # Generate PDF
     file_path = f"invoice_{order_id}.pdf"
@@ -318,8 +347,8 @@ def checkout():
     table_data = [["Product", "Price", "Qty", "Subtotal"]]
 
     for item in items:
-        subtotal = item[1] * item[2]
-        table_data.append([item[0], item[1], item[2], subtotal])
+        subtotal = item["price"] * item["quantity"]
+        table_data.append([item["name"], item["price"], item["quantity"], subtotal])
 
     table_data.append(["", "", "Total", total])
 
@@ -334,7 +363,6 @@ def checkout():
 
     return send_file(file_path, as_attachment=True)
 
-
 # orders view route.
 @app.route("/orders")
 def orders():
@@ -342,17 +370,20 @@ def orders():
         return redirect("/login")
 
     user_id = session["user_id"]
-    cur = mysql.connection.cursor()
+
+    conn = get_db()
+    cur = conn.cursor()
 
     cur.execute("""
         SELECT id, total_amount, order_date, status
         FROM orders
-        WHERE user_id=%s
+        WHERE user_id=?
         ORDER BY order_date DESC
     """, (user_id,))
 
     orders = cur.fetchall()
-    cur.close()
+
+    conn.close()
 
     return render_template("orders.html", orders=orders)
 
@@ -367,32 +398,31 @@ def book_appointment():
     time = request.form["time"]
     doctor = request.form["doctor"]
 
-    cur = mysql.connection.cursor()
+    conn = get_db()
+    cur = conn.cursor()
 
     cur.execute("""
-    INSERT INTO appointments(name, email, doctor, age, appointment_date, time, status)
-    VALUES(%s,%s,%s,%s,%s,%s,'Pending')
-""", (name, email, doctor, age, appointment_date, time))
+        INSERT INTO appointments(name, email, doctor, age, appointment_date, time, status)
+        VALUES(?,?,?,?,?,?,?)
+    """, (name, email, doctor, age, appointment_date, time, "Pending"))
 
-    mysql.connection.commit()
-    cur.close()
+    conn.commit()
+    conn.close()
 
     return render_template("successappointment.html")
-    # return redirect("/success")
-
-# doctor_consultation route.
-@app.route("/doctor_consult")
-def doctor_consult():
-    return render_template("doctor_consult.html")
 
 
 # my appointments route.
 @app.route("/my_appointments")
 def my_appointments():
-    cur = mysql.connection.cursor()
+    conn = get_db()
+    cur = conn.cursor()
+
     cur.execute("SELECT * FROM appointments")
     data = cur.fetchall()
-    cur.close()
+
+    conn.close()
+
     return render_template("my_appointments.html", appointments=data)
 
 
