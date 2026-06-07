@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Products - MediZone</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: linear-gradient(to right, #dfe9f3, #f7f9f9);
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: #0b3d91;
+            color: white;
+        }
+
+        h2, h3 {
+            text-align: center;
+        }
+
+        /* GRID CONTAINER */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* PRODUCT CARD */
+        .card {
+            width: 28%;   /* 🔥 3 cards per row */
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0px 0px 12px rgba(0,0,0,0.15);
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        h4 {
+            color: #0b3d91;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 12px;
+            margin: 5px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            background: #0f5132;
+        }
+
+        .btn:hover {
+            background: #083c25;
+        }
+
+        .btn-blue {
+            background: hsl(218, 73%, 39%);
+        }
+
+        .btn-blue:hover {
+            background: #062a66;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .card {
+                width: 45%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .card {
+                width: 90%;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="header">
+    <h1>💊 MediZone Products</h1>
+    <p>Safe & Trusted Medicines</p>
+</div>
+
+<h2>👋 Welcome {{ session['user_name'] }}</h2>
+<h3>Our Products</h3>
+
+<div class="container">
+
+    {% for product in products %}
+    <div class="card">
+        <h4>{{ product[1] }}</h4>
+        <p>💰 ₹{{ product[2] }}</p>
+
+        <a class="btn" href="/add_to_cart/{{ product[0] }}">🛒 Add to Cart</a>
+        <a class="btn btn-blue" href="/buy_now/{{ product[0] }}">⚡ Buy Now</a>
+    </div>
+    {% endfor %}
+</div>
+<div class="top-links">
+
+        <a class="btn" href="/cart">🛍 View Cart</a>
+        <a class="btn btn-blue" href="/orders">📦 My Orders</a>
+        <a class="btn" href="/logout">🚪 Logout</a>
+        <a class="btn btn-blue" href="/">🏠 Home</a>
+    </div>
+
+
+</body>
+</html>

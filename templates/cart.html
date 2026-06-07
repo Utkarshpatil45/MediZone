@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Cart - MediZone</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: linear-gradient(to right, #dfe9f3, #f7f9f9);
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: #0b3d91;
+            color: white;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .container {
+            width: 70%;
+            margin: auto;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 12px;
+            box-shadow: 0px 0px 12px rgba(0,0,0,0.15);
+        }
+
+        .qty a {
+            text-decoration: none;
+            padding: 5px 10px;
+            background: #0b3d91;
+            color: white;
+            border-radius: 5px;
+            margin: 0 5px;
+        }
+
+        .qty a:hover {
+            background: #062a66;
+        }
+
+        .total {
+            text-align: right;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 10px 5px;
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            background: #0f5132;
+        }
+
+        .btn:hover {
+            background: #083c25;
+        }
+
+        .btn-blue {
+            background: #0b3d91;
+        }
+
+        .btn-blue:hover {
+            background: #062a66;
+        }
+
+        .bottom {
+            text-align: center;
+            margin: 30px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="header">
+    <h1>🛍 MediZone Cart</h1>
+    <p>Your selected medicines</p>
+</div>
+
+<h2>Your Cart</h2>
+
+<div class="container">
+
+    {% for item in items %}
+    <div class="card">
+
+        <h3>{{ item[1] }}</h3>
+
+        <p>💰 Price: ₹{{ item[2] }}</p>
+
+        <p class="qty">
+            Quantity:
+            <a href="/decrease/{{ item[0] }}">-</a>
+            {{ item[3] }}
+            <a href="/increase/{{ item[0] }}">+</a>
+        </p>
+
+        <p>🧾 Subtotal: ₹{{ item[2] * item[3] }}</p>
+
+    </div>
+    {% endfor %}
+
+    <div class="total">
+        <strong>💰 Grand Total: ₹{{ total }}</strong>
+    </div>
+
+    <div class="bottom">
+        <a class="btn" href="/products">🛒 Continue Shopping</a>
+        <a class="btn btn-blue" href="/checkout">✅ Proceed to Checkout</a>
+    </div>
+
+</div>
+<script>
+function increase(id) {
+    fetch('/increase/' + id)
+    .then(() => location.reload());
+}
+
+function decrease(id) {
+    fetch('/decrease/' + id)
+    .then(() => location.reload());
+}
+</script>
+</body>
+</html>

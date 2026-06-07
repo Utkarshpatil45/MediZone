@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MediZone</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            background: url("https://images.unsplash.com/photo-1585435557343-3b092031a831") no-repeat center center/cover;
+           /* background: url("https://images.unsplash.com/photo-1538108149393-fbbd81895907") no-repeat center center/cover; */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Dark Overlay */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+        }
+
+        .main-container {
+            position: relative;
+            text-align: center;
+            color: white;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 45px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .card {
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.15);
+            padding: 30px;
+            border-radius: 15px;
+            width: 500px;
+            margin: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            font-size: 15px;
+            margin-bottom: 20px;
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 20px;
+            margin: 8px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 15px;
+            background: #0f5132;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: #083c25;
+            transform: scale(1.08);
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="main-container">
+
+    <div class="header">
+        <h1>🏥 MediZone Hospital</h1>
+        <p>“Your Health, Our Priority” ❤️</p>
+    </div>
+
+    <div class="card">
+        <h2>👋 Welcome to MediZone</h2>
+        <p>Book appointments, consult doctors online, and order medicines easily.</p>
+
+        <div class="buttons">
+            <a href="/login" class="btn">🔐 Login</a>
+            <a href="/register" class="btn">📝 Register</a>
+            <a href="/products" class="btn">💊 Buy Products</a>
+            <a href="/cart" class="btn">🛒 View Cart</a>
+            <a href="/doctor_consult" class="btn">👨‍⚕️ Doctor Consultation</a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

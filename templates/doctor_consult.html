@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Doctor Consultation - MediZone</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: linear-gradient(to right, #dfe9f3, #f7f9f9);
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: #0b3d91;
+            color: white;
+        }
+
+        h2, h3 {
+            text-align: center;
+        }
+
+        .container {
+            width: 80%;
+            margin: auto;
+        }
+
+        /* DOCTOR CARD */
+        .card {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 12px;
+            box-shadow: 0px 0px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card img {
+            width: 120px;
+            height: 120px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .card h4 {
+            color: #0b3d91;
+            margin: 0;
+        }
+
+        /* FORM */
+        form {
+            background: white;
+            padding: 20px;
+            margin: 30px auto;
+            width: 60%;
+            border-radius: 12px;
+            box-shadow: 0px 0px 12px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        input, select {
+            width: 90%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            background: #0f5132;   /* 🟢 dark green */
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #083c25;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="header">
+    <h1>👨‍⚕️ Doctor Consultation</h1>
+    <p>Book your appointment with top doctors</p>
+</div>
+
+<div class="container">
+
+<h3>Available Doctors</h3>
+
+<div class="card">
+    <div>
+        <h4>Dr. Utkarsh Patil</h4>
+        <p>Dermatologist - 5 years experience</p>
+    </div>
+</div>
+
+<div class="card">
+    <img src="/static/jayeshdoc.jpg">
+    <div>
+        <h4>Dr. Jayesh Pawar</h4>
+        <p>General Physician - 8 years experience</p>
+    </div>
+</div>
+
+<div class="card">
+    <div>
+        <h4>Dr. Sharma</h4>
+        <p>Cardiologist - 10 years experience</p>
+    </div>
+</div>
+
+<h3>Book Appointment</h3>
+
+<!-- <form action="/book_appointment" method="POST"> -->
+<form action="/book_appointment" method="POST">
+    <input type="name" name="name" placeholder="name" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="number" name="age" placeholder="Age" required>
+    <input type="date" name="date" required>
+    <input type="time" name="time" required>
+    <input type="text" name="issue" placeholder="Problem" required>
+
+    <select name="doctor" required>
+        <option value="Dr. Utkarsh Patil - Dermatologist">Dr. Utkarsh Patil - Dermatologist</option>
+        <option value="Dr. Jayesh Pawar - General Physician">Dr. Jayesh Pawar - General Physician</option>
+        <option value="Dr. Sharma - Cardiologist">Dr. Sharma - Cardiologist</option>
+    </select>
+
+<button type="submit">📅 Book Appointment</button></form>
+
+    <a class="btn" href="/index">⬅ Back to home</a>
+
+<br>
+</div>
+
+</body>
+</html>
